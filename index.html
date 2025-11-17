@@ -464,6 +464,7 @@ async function fetchTrains() {
     // Log data for debugging (you can remove this later)
     console.log('📊 Irish Rail API Data:', {
       timestamp: new Date().toLocaleTimeString(),
+      station: currentStation,
       totalTrains: trains.length,
       trains: trains.map(t => ({
         code: t.Traincode,
@@ -478,6 +479,16 @@ async function fetchTrains() {
       }))
     });
     
+    // If no trains at all, show message
+    if (trains.length === 0) {
+      const noTrainsMsg = '<div class="no-trains">No trains currently scheduled<br><small>Check back closer to departure time</small></div>';
+      document.getElementById("dublin-trains").innerHTML = noTrainsMsg;
+      document.getElementById("maynooth-trains").innerHTML = noTrainsMsg;
+      document.getElementById('destination-1-header').textContent = 'No Departures';
+      document.getElementById('destination-2-header').textContent = 'No Departures';
+      return;
+    }
+    
     // Group trains by destination
     const destinationGroups = {};
     trains.forEach(train => {
@@ -487,6 +498,8 @@ async function fetchTrains() {
       }
       destinationGroups[dest].push(train);
     });
+    
+    console.log('📍 Destination groups:', destinationGroups);
     
     // Sort groups by number of trains (most common destinations first)
     const sortedDestinations = Object.entries(destinationGroups)
@@ -498,6 +511,13 @@ async function fetchTrains() {
     
     const dest2Trains = sortedDestinations[1] ? sortedDestinations[1][1].slice(0, 3) : [];
     const dest2Name = sortedDestinations[1] ? sortedDestinations[1][0] : 'No trains';
+    
+    console.log('✅ Showing:', {
+      destination1: dest1Name,
+      trains1: dest1Trains.length,
+      destination2: dest2Name,
+      trains2: dest2Trains.length
+    });
     
     // Update panel headers with destination names
     document.getElementById('destination-1-header').textContent = `→ ${dest1Name}`;
