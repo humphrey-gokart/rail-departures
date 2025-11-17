@@ -299,8 +299,15 @@ body {
 </div>
 
 <script>
-// Using AllOrigins as a CORS proxy - works without API keys
+// Multiple CORS proxy options with fallback
 const API_URL = "http://api.irishrail.ie/realtime/realtime.asmx/getStationDataByNameXML?StationDesc=Coolmine";
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+let currentProxyIndex = 0;
+let failureCount = 0;
 
 function updateClock() {
   const now = new Date();
@@ -358,8 +365,8 @@ function createRow(train) {
     dueDisplay = train.Duein === "0" ? "DUE" : train.Duein + " min";
   }
   
-  // Add DELAYED indicator for late trains
-  const delayLabel = late > 0 ? '<span class="delay-label">DELAYED</span>' : '';
+  // Add DELAYED indicator with minutes late
+  const delayLabel = late > 0 ? `<span class="delay-label">+${late} MIN</span>` : '';
   
   return `<div class="train-row ${statusClass}">
     <span class="destination">${dest} ${delayLabel}</span>
@@ -371,12 +378,16 @@ function createRow(train) {
 
 async function fetchTrains() {
   try {
-    // Using AllOrigins CORS proxy
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(API_URL)}`;
+    // Try current proxy
+    const proxyUrl = `${CORS_PROXIES[currentProxyIndex]}${encodeURIComponent(API_URL)}`;
+    console.log(`🔄 Fetching from proxy ${currentProxyIndex + 1}/${CORS_PROXIES.length}:`, CORS_PROXIES[currentProxyIndex]);
     
-    const res = await fetch(proxyUrl);
+    const res = await fetch(proxyUrl, { 
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+    
     if (!res.ok) {
-      throw new Error(`API returned status ${res.status}`);
+      throw new Error(`Proxy returned status ${res.status}`);
     }
     
     const text = await res.text();
@@ -399,6 +410,21 @@ async function fetchTrains() {
       Late: n.getElementsByTagName("Late")[0]?.textContent || "0",
       Direction: n.getElementsByTagName("Direction")[0]?.textContent || ""
     }));
+    
+    // Log data for debugging (you can remove this later)
+    console.log('📊 Irish Rail API Data:', {
+      timestamp: new Date().toLocaleTimeString(),
+      totalTrains: trains.length,
+      trains: trains.map(t => ({
+        code: t.Traincode,
+        dest: t.Destination,
+        due: t.Duein + ' min',
+        expected: t.Exparrival,
+        scheduled: t.Schdepart,
+        late: t.Late + ' min',
+        isDelayed: parseInt(t.Late) > 0
+      }))
+    });
     
     // Filter trains by direction
     const dublinTerminals = ["Pearse", "Connolly", "Docklands", "Grand Canal Dock"];
@@ -426,9 +452,22 @@ async function fetchTrains() {
       maynoothEl.innerHTML = '<div class="no-trains">No trains scheduled</div>';
     }
     
+    // Reset failure count on success
+    failureCount = 0;
+    console.log('✅ Successfully loaded train data');
+    
   } catch(e) {
-    console.error('Error fetching train data:', e);
-    const errorMsg = '<div class="error-message">⚠ Unable to load departure information<br>Please check connection</div>';
+    console.error('❌ Error fetching train data:', e.message);
+    failureCount++;
+    
+    // Try next proxy if current one failed
+    if (failureCount >= 2) {
+      currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+      console.log(`🔄 Switching to proxy ${currentProxyIndex + 1}: ${CORS_PROXIES[currentProxyIndex]}`);
+      failureCount = 0;
+    }
+    
+    const errorMsg = `<div class="error-message">⚠ Unable to load departure information<br><small>Trying alternative connection... (Error: ${e.message})</small></div>`;
     document.getElementById("dublin-trains").innerHTML = errorMsg;
     document.getElementById("maynooth-trains").innerHTML = errorMsg;
   }
