@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coolmine Live Departures</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #1a1a1a;
+  font-family: 'Orbitron', 'Courier New', monospace;
+  color: #ff9500;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.station-header {
+  background: #000;
+  border: 3px solid #333;
+  padding: 15px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 
+    0 0 20px rgba(255, 149, 0, 0.3),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.station-header h1 {
+  font-size: 2.2em;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 
+    0 0 10px rgba(255, 149, 0, 0.8),
+    0 0 20px rgba(255, 149, 0, 0.4);
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.timestamp {
+  font-size: 0.9em;
+  margin-top: 8px;
+  color: #ff9500;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.board-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+}
+
+.panel {
+  background: #000;
+  border: 4px solid #2a2a2a;
+  box-shadow: 
+    0 0 30px rgba(255, 149, 0, 0.2),
+    inset 0 0 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  background: #1a1a1a;
+  padding: 15px;
+  text-align: center;
+  border-bottom: 3px solid #333;
+}
+
+.panel-header h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(255, 149, 0, 0.6);
+}
+
+.train-table {
+  padding: 15px;
+  flex: 1;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.2fr;
+  gap: 10px;
+  padding: 10px 8px;
+  border-bottom: 2px solid #333;
+  font-weight: 700;
+  font-size: 0.95em;
+  letter-spacing: 1px;
+}
+
+.train-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.2fr;
+  gap: 10px;
+  padding: 12px 8px;
+  border-bottom: 1px solid #1a1a1a;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.train-row:hover {
+  background: #1a1a1a;
+  box-shadow: inset 0 0 10px rgba(255, 149, 0, 0.1);
+}
+
+.train-row span {
+  text-shadow: 0 0 5px rgba(255, 149, 0, 0.5);
+}
+
+.destination {
+  font-weight: 700;
+  font-size: 1.05em;
+}
+
+.due-time {
+  font-weight: 900;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+.expected {
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.train-code {
+  text-align: right;
+  font-family: 'Courier New', monospace;
+  opacity: 0.8;
+}
+
+.status-on-time {
+  color: #ff9500;
+}
+
+.status-delayed {
+  color: #ff3300;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.no-trains {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2em;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.error-message {
+  text-align: center;
+  padding: 40px;
+  color: #ff3300;
+  font-size: 1.1em;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1em;
+  opacity: 0.7;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .board-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .station-header h1 {
+    font-size: 1.8em;
+  }
+}
+
+@media (max-width: 600px) {
+  .table-header, .train-row {
+    grid-template-columns: 2fr 0.8fr 0.8fr 1fr;
+    gap: 5px;
+    font-size: 0.85em;
+  }
+  
+  .station-header h1 {
+    font-size: 1.4em;
+  }
+  
+  .panel-header h2 {
+    font-size: 1.2em;
+  }
+}
+
+/* Scanline effect for authenticity */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div class="station-header">
+  <h1>Coolmine Station</h1>
+  <div class="timestamp" id="current-time">Loading...</div>
+</div>
+
+<div class="board-container">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>→ Dublin</h2>
+    </div>
+    <div class="train-table">
+      <div class="table-header">
+        <span>Destination</span>
+        <span>Due</span>
+        <span>Exp</span>
+        <span>Train</span>
+      </div>
+      <div id="dublin-trains" class="loading">Loading departures...</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>← Maynooth</h2>
+    </div>
+    <div class="train-table">
+      <div class="table-header">
+        <span>Destination</span>
+        <span>Due</span>
+        <span>Exp</span>
+        <span>Train</span>
+      </div>
+      <div id="maynooth-trains" class="loading">Loading departures...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Note: Direct API access may have CORS restrictions
+// If you encounter CORS errors, you may need to use a proxy or backend service
+const API_URL = "http://api.irishrail.ie/realtime/realtime.asmx/getStationDataByNameXML?StationDesc=Coolmine";
+
+function updateClock() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-IE', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit',
+    hour12: false 
+  });
+  const dateString = now.toLocaleDateString('en-IE', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  document.getElementById('current-time').textContent = `${dateString} - ${timeString}`;
+}
+
+function createRow(train) {
+  const due = train.Duein;
+  const exp = train.Exparrival || train.Schdepart || '--:--';
+  const code = train.Traincode;
+  const dest = train.Destination;
+  const late = parseInt(train.Late || "0");
+  const statusClass = late > 0 ? "status-delayed" : "status-on-time";
+  
+  // Format due time
+  const dueDisplay = due === "0" ? "DUE" : `${due} min`;
+  
+  return `<div class="train-row ${statusClass}">
+    <span class="destination">${dest}</span>
+    <span class="due-time">${dueDisplay}</span>
+    <span class="expected">${exp}</span>
+    <span class="train-code">${code}</span>
+  </div>`;
+}
+
+async function fetchTrains() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) {
+      throw new Error(`API returned status ${res.status}`);
+    }
+    
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "application/xml");
+    
+    // Check for XML parsing errors
+    const parserError = xml.querySelector('parsererror');
+    if (parserError) {
+      throw new Error('Failed to parse XML response');
+    }
+    
+    const nodes = [...xml.getElementsByTagName("objStationData")];
+    const trains = nodes.map(n => ({
+      Traincode: n.getElementsByTagName("Traincode")[0]?.textContent || "",
+      Destination: n.getElementsByTagName("Destination")[0]?.textContent || "",
+      Schdepart: n.getElementsByTagName("Schdepart")[0]?.textContent || "",
+      Exparrival: n.getElementsByTagName("Exparrival")[0]?.textContent || "",
+      Duein: n.getElementsByTagName("Duein")[0]?.textContent || "0",
+      Late: n.getElementsByTagName("Late")[0]?.textContent || "0",
+      Direction: n.getElementsByTagName("Direction")[0]?.textContent || ""
+    }));
+    
+    // Filter trains by direction
+    const dublinTerminals = ["Pearse", "Connolly", "Docklands", "Grand Canal Dock"];
+    const dublin = trains
+      .filter(t => dublinTerminals.some(d => t.Destination.includes(d)))
+      .slice(0, 6);
+    
+    const maynooth = trains
+      .filter(t => /Maynooth|M3 Parkway/i.test(t.Destination))
+      .slice(0, 6);
+    
+    // Update displays
+    const dublinEl = document.getElementById("dublin-trains");
+    const maynoothEl = document.getElementById("maynooth-trains");
+    
+    if (dublin.length) {
+      dublinEl.innerHTML = dublin.map(createRow).join("");
+    } else {
+      dublinEl.innerHTML = '<div class="no-trains">No trains scheduled</div>';
+    }
+    
+    if (maynooth.length) {
+      maynoothEl.innerHTML = maynooth.map(createRow).join("");
+    } else {
+      maynoothEl.innerHTML = '<div class="no-trains">No trains scheduled</div>';
+    }
+    
+  } catch(e) {
+    console.error('Error fetching train data:', e);
+    const errorMsg = '<div class="error-message">⚠ Unable to load departure information<br>Please check connection</div>';
+    document.getElementById("dublin-trains").innerHTML = errorMsg;
+    document.getElementById("maynooth-trains").innerHTML = errorMsg;
+  }
+}
+
+// Initialize
+updateClock();
+fetchTrains();
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Update train data every 30 seconds
+setInterval(fetchTrains, 30000);
+</script>
+</body>
+</html>
