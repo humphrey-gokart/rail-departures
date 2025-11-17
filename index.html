@@ -159,7 +159,6 @@ body {
 
 .status-delayed {
   color: #ff0000;
-  animation: blink 1.5s ease-in-out infinite;
 }
 
 .delay-label {
@@ -172,18 +171,6 @@ body {
   margin-left: 8px;
   border-radius: 3px;
   letter-spacing: 1px;
-  animation: blinkBg 1s ease-in-out infinite;
-}
-
-@keyframes blinkBg {
-  0%, 100% { 
-    background: #ff0000;
-    opacity: 1;
-  }
-  50% { 
-    background: #cc0000;
-    opacity: 0.8;
-  }
 }
 
 @keyframes blink {
