@@ -292,23 +292,20 @@ body {
   <div class="station-selector">
     <label for="station-select">Change Station:</label>
     <select id="station-select">
+      <option value="Maynooth">Maynooth</option>
+      <option value="Leixlip Confey">Leixlip Confey</option>
+      <option value="Leixlip Louisa Bridge">Leixlip (Louisa Bridge)</option>
+      <option value="Clonsilla">Clonsilla</option>
       <option value="Coolmine" selected>Coolmine</option>
+      <option value="Castleknock">Castleknock</option>
       <option value="Ashtown">Ashtown</option>
       <option value="Broombridge">Broombridge</option>
-      <option value="Castleknock">Castleknock</option>
-      <option value="Clonsilla">Clonsilla</option>
-      <option value="Connolly">Connolly</option>
-      <option value="Docklands">Docklands</option>
       <option value="Drumcondra">Drumcondra</option>
-      <option value="Grand Canal Dock">Grand Canal Dock</option>
-      <option value="Hansfield">Hansfield</option>
-      <option value="Howth">Howth</option>
-      <option value="Howth Junction">Howth Junction</option>
-      <option value="Kilbarrack">Kilbarrack</option>
-      <option value="Maynooth">Maynooth</option>
-      <option value="Pearse">Pearse</option>
-      <option value="Portmarnock">Portmarnock</option>
+      <option value="Connolly">Connolly</option>
       <option value="Tara Street">Tara Street</option>
+      <option value="Pearse">Pearse</option>
+      <option value="Grand Canal Dock">Grand Canal Dock</option>
+      <option value="Docklands">Docklands</option>
     </select>
   </div>
 </div>
@@ -478,7 +475,7 @@ async function fetchTrains() {
       }))
     });
     
-    // Filter trains by direction
+    // Filter trains by direction (Maynooth line)
     const dublinTerminals = ["Pearse", "Connolly", "Docklands", "Grand Canal Dock"];
     const dublin = trains
       .filter(t => dublinTerminals.some(d => t.Destination.includes(d)))
