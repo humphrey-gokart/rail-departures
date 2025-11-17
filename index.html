@@ -141,8 +141,8 @@ body {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.2fr;
-  gap: 10px;
+  grid-template-columns: 2.5fr 0.6fr 0.8fr 1fr;
+  gap: 8px;
   padding: 10px 8px;
   border-bottom: 2px solid #333;
   font-weight: 700;
@@ -152,8 +152,8 @@ body {
 
 .train-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.2fr;
-  gap: 10px;
+  grid-template-columns: 2.5fr 0.6fr 0.8fr 1fr;
+  gap: 8px;
   padding: 12px 8px;
   border-bottom: 1px solid #1a1a1a;
   transition: all 0.3s ease;
@@ -179,6 +179,12 @@ body {
   font-size: 1.05em;
 }
 
+.platform {
+  text-align: center;
+  font-weight: 900;
+  font-size: 1.1em;
+}
+
 .due-time {
   font-weight: 900;
   font-size: 1.2em;
@@ -188,12 +194,6 @@ body {
 .expected {
   text-align: center;
   font-size: 0.9em;
-}
-
-.train-code {
-  text-align: right;
-  font-family: 'Courier New', monospace;
-  opacity: 0.8;
 }
 
 .status-on-time {
@@ -252,7 +252,7 @@ body {
 
 @media (max-width: 600px) {
   .table-header, .train-row {
-    grid-template-columns: 2fr 0.8fr 0.8fr 1fr;
+    grid-template-columns: 2fr 0.5fr 0.7fr 0.9fr;
     gap: 5px;
     font-size: 0.85em;
   }
@@ -313,14 +313,14 @@ body {
 <div class="board-container">
   <div class="panel">
     <div class="panel-header">
-      <h2>→ Dublin</h2>
+      <h2 id="destination-1-header">Loading...</h2>
     </div>
     <div class="train-table">
       <div class="table-header">
         <span>Destination</span>
+        <span>Plat</span>
         <span>Due</span>
         <span>Exp</span>
-        <span>Train</span>
       </div>
       <div id="dublin-trains" class="loading">Loading departures...</div>
     </div>
@@ -328,14 +328,14 @@ body {
 
   <div class="panel">
     <div class="panel-header">
-      <h2>← Maynooth</h2>
+      <h2 id="destination-2-header">Loading...</h2>
     </div>
     <div class="train-table">
       <div class="table-header">
         <span>Destination</span>
+        <span>Plat</span>
         <span>Due</span>
         <span>Exp</span>
-        <span>Train</span>
       </div>
       <div id="maynooth-trains" class="loading">Loading departures...</div>
     </div>
@@ -373,7 +373,7 @@ function updateClock() {
 
 function createRow(train) {
   const exp = train.Exparrival || train.Schdepart || '--:--';
-  const code = train.Traincode;
+  const platform = train.Platform || '-';
   const dest = train.Destination;
   const late = parseInt(train.Late || "0");
   const statusClass = late > 0 ? "status-delayed" : "status-on-time";
@@ -415,9 +415,9 @@ function createRow(train) {
   
   return `<div class="train-row ${statusClass}">
     <span class="destination">${dest} ${delayLabel}</span>
+    <span class="platform">${platform}</span>
     <span class="due-time">${dueDisplay}</span>
     <span class="expected">${exp}</span>
-    <span class="train-code">${code}</span>
   </div>`;
 }
 
@@ -457,7 +457,8 @@ async function fetchTrains() {
       Exparrival: n.getElementsByTagName("Exparrival")[0]?.textContent || "",
       Duein: n.getElementsByTagName("Duein")[0]?.textContent || "0",
       Late: n.getElementsByTagName("Late")[0]?.textContent || "0",
-      Direction: n.getElementsByTagName("Direction")[0]?.textContent || ""
+      Direction: n.getElementsByTagName("Direction")[0]?.textContent || "",
+      Platform: n.getElementsByTagName("Platform")[0]?.textContent || "-"
     }));
     
     // Log data for debugging (you can remove this later)
@@ -467,6 +468,8 @@ async function fetchTrains() {
       trains: trains.map(t => ({
         code: t.Traincode,
         dest: t.Destination,
+        platform: t.Platform,
+        direction: t.Direction,
         due: t.Duein + ' min',
         expected: t.Exparrival,
         scheduled: t.Schdepart,
@@ -475,28 +478,43 @@ async function fetchTrains() {
       }))
     });
     
-    // Filter trains by direction (Maynooth line)
-    const dublinTerminals = ["Pearse", "Connolly", "Docklands", "Grand Canal Dock"];
-    const dublin = trains
-      .filter(t => dublinTerminals.some(d => t.Destination.includes(d)))
-      .slice(0, 6);
+    // Group trains by destination
+    const destinationGroups = {};
+    trains.forEach(train => {
+      const dest = train.Destination;
+      if (!destinationGroups[dest]) {
+        destinationGroups[dest] = [];
+      }
+      destinationGroups[dest].push(train);
+    });
     
-    const maynooth = trains
-      .filter(t => /Maynooth|M3 Parkway/i.test(t.Destination))
-      .slice(0, 6);
+    // Sort groups by number of trains (most common destinations first)
+    const sortedDestinations = Object.entries(destinationGroups)
+      .sort((a, b) => b[1].length - a[1].length);
+    
+    // Get top 2 destinations
+    const dest1Trains = sortedDestinations[0] ? sortedDestinations[0][1].slice(0, 3) : [];
+    const dest1Name = sortedDestinations[0] ? sortedDestinations[0][0] : 'No trains';
+    
+    const dest2Trains = sortedDestinations[1] ? sortedDestinations[1][1].slice(0, 3) : [];
+    const dest2Name = sortedDestinations[1] ? sortedDestinations[1][0] : 'No trains';
+    
+    // Update panel headers with destination names
+    document.getElementById('destination-1-header').textContent = `→ ${dest1Name}`;
+    document.getElementById('destination-2-header').textContent = `→ ${dest2Name}`;
     
     // Update displays
     const dublinEl = document.getElementById("dublin-trains");
     const maynoothEl = document.getElementById("maynooth-trains");
     
-    if (dublin.length) {
-      dublinEl.innerHTML = dublin.map(createRow).join("");
+    if (dest1Trains.length) {
+      dublinEl.innerHTML = dest1Trains.map(createRow).join("");
     } else {
       dublinEl.innerHTML = '<div class="no-trains">No trains scheduled</div>';
     }
     
-    if (maynooth.length) {
-      maynoothEl.innerHTML = maynooth.map(createRow).join("");
+    if (dest2Trains.length) {
+      maynoothEl.innerHTML = dest2Trains.map(createRow).join("");
     } else {
       maynoothEl.innerHTML = '<div class="no-trains">No trains scheduled</div>';
     }
